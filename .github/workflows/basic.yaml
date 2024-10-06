@@ -21,21 +21,26 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v3
+   
+    - id: movetolowercase
+      uses: ASzc/change-string-case-action@v2
+      with:
+        string: ${{ github.repository }}
 
     - name: Login to docker repo
       run: echo $DOCKER_REGISTRY_PASS | docker login -u $DOCKER_REGISTRY_USER --password-stdin $DOCKER_REGISTRY_URL
     
     - name: Build the Docker image
-      run: docker build . --file Dockerfile --tag ${{ github.repository }}:${{ github.sha }}
+      run: docker build . --file Dockerfile --tag ${{ steps.string.outputs.lowercase }}:${{ github.sha }}
 
     - name: Tag the image for the private registry $DOCKER_REGISTRY_URL
-      run: docker tag ${{ github.repository }}:${{ github.sha }} $DOCKER_REGISTRY_URL/${{ github.repository }}:${{ github.sha }}
+      run: docker tag ${{ steps.string.outputs.lowercase }}:${{ github.sha }} $DOCKER_REGISTRY_URL/${{ steps.string.outputs.lowercase }}:${{ github.sha }}
 
     - name: Push the Docker image with version number
-      run: docker push $DOCKER_REGISTRY_URL/${{ github.repository }}:${{ github.sha }}
+      run: docker push $DOCKER_REGISTRY_URL/${{ steps.string.outputs.lowercase }}:${{ github.sha }}
 
     - name: Remove the local image
-      run: docker rmi ${{ github.repository }}:${{ github.sha }}
+      run: docker rmi ${{ steps.string.outputs.lowercase }}:${{ github.sha }}
 
     - name: Deploy to Web Server
       uses: appleboy/ssh-action@master
@@ -47,8 +52,8 @@ jobs:
         key:       ${{ secrets.SSH_SERVER_KEY }}
         script: |
           echo $DOCKER_REGISTRY_PASS | docker login -u $DOCKER_REGISTRY_USER --password-stdin $DOCKER_REGISTRY_URL
-          docker pull $DOCKER_REGISTRY_URL/${{ github.repository }}:${{ github.sha }}
-          docker run -itd --restart always -p $DOCKER_PORT:8080 --name=${{ github.event.repository.name }} $DOCKER_REGISTRY_URL/${{ github.repository }}:${{ github.sha }}
+          docker pull $DOCKER_REGISTRY_URL/${{ steps.string.outputs.lowercase }}:${{ github.sha }}
+          docker run -itd --restart always -p $DOCKER_PORT:8080 --name=${{ github.event.repository.name }} $DOCKER_REGISTRY_URL/${{ steps.string.outputs.lowercase }}:${{ github.sha }}
           docker logout $DOCKER_REGISTRY_URL
 
 
