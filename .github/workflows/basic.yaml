@@ -1,0 +1,55 @@
+name: My awesome workflow
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - 'main'
+
+# Docker environments
+env:
+  DOCKER_REGISTRY_URL:  ${{ secrets.DOCKER_REGISTRY_URL }}
+  DOCKER_REGISTRY_USER: ${{ secrets.DOCKER_REGISTRY_USER }}
+  DOCKER_REGISTRY_PASS: ${{ secrets.DOCKER_REGISTRY_PASS }}
+  DOCKER_PORT:          8001
+
+jobs:
+  deploy_app:
+    name: Build docker image and deploy via ssh
+    runs-on: 
+      ubuntu-latest
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+
+    - name: Login to docker repo
+      run: echo $DOCKER_REGISTRY_PASS | docker login -u $DOCKER_REGISTRY_USER --password-stdin $DOCKER_REGISTRY_URL
+    
+    - name: Build the Docker image
+      run: docker build . --file Dockerfile --tag ${{ github.repository }}:${{ github.sha }}
+
+    - name: Tag the image for the private registry $DOCKER_REGISTRY_URL
+      run: docker tag ${{ github.repository }}:${{ github.sha }} $DOCKER_REGISTRY_URL/${{ github.repository }}:${{ github.sha }}
+
+    - name: Push the Docker image with version number
+      run: docker push $DOCKER_REGISTRY_URL/${{ github.repository }}:${{ github.sha }}
+
+    - name: Remove the local image
+      run: docker rmi ${{ github.repository }}:${{ github.sha }}
+
+    - name: Deploy to Web Server
+      uses: appleboy/ssh-action@master
+      with:
+        envs: DOCKER_REGISTRY_PASS, DOCKER_REGISTRY_USER, DOCKER_REGISTRY_URL, DOCKER_PORT
+        host:      ${{ secrets.SSH_SERVER_HOST }}
+        port:      ${{ secrets.SSH_SERVER_PORT }}
+        username:  ${{ secrets.SSH_SERVER_USER }}
+        key:       ${{ secrets.SSH_SERVER_KEY }}
+        script: |
+          echo $DOCKER_REGISTRY_PASS | docker login -u $DOCKER_REGISTRY_USER --password-stdin $DOCKER_REGISTRY_URL
+          docker pull $DOCKER_REGISTRY_URL/${{ github.repository }}:${{ github.sha }}
+          docker run -itd --restart always -p $DOCKER_PORT:8080 --name=${{ github.event.repository.name }} $DOCKER_REGISTRY_URL/${{ github.repository }}:${{ github.sha }}
+          docker logout $DOCKER_REGISTRY_URL
+
+
+  
