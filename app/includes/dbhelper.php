@@ -2,7 +2,7 @@
 
 $db_host = "193.187.174.111";
 $db_user = "root";
-$db_pass = "root";
+$db_pass = "123";
 $db_db = "site";
 
 function get_data_from_table($sel_from){
