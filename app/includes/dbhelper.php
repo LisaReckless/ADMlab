@@ -1,8 +1,8 @@
 <?php
 
-$db_host = "193.187.174.111";
-$db_user = "root";
-$db_pass = "123";
+$db_host = "sql7.freemysqlhosting.net";
+$db_user = "sql7735983";
+$db_pass = "WYWXUjqF3p";
 $db_db = "site";
 
 function get_data_from_table($sel_from){
