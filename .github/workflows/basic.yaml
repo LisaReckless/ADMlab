@@ -31,16 +31,16 @@ jobs:
       run: echo $DOCKER_REGISTRY_PASS | docker login -u $DOCKER_REGISTRY_USER --password-stdin $DOCKER_REGISTRY_URL
     
     - name: Build the Docker image
-      run: docker build . --file Dockerfile --tag ${{ steps.movetolowercase.outputs.lowercase }}:${{ github.sha }}
+      run: docker build . --file Dockerfile --tag ${{ steps.movetolowercase.outputs.lowercase }}:latest
 
     - name: Tag the image for the private registry $DOCKER_REGISTRY_URL
-      run: docker tag ${{ steps.movetolowercase.outputs.lowercase }}:${{ github.sha }} $DOCKER_REGISTRY_URL/${{ steps.movetolowercase.outputs.lowercase }}:${{ github.sha }}
+      run: docker tag ${{ steps.movetolowercase.outputs.lowercase }}:latest $DOCKER_REGISTRY_URL/${{ steps.movetolowercase.outputs.lowercase }}:latest
 
     - name: Push the Docker image with version number
-      run: docker push $DOCKER_REGISTRY_URL/${{ steps.movetolowercase.outputs.lowercase }}:${{ github.sha }}
+      run: docker push $DOCKER_REGISTRY_URL/${{ steps.movetolowercase.outputs.lowercase }}:latest
 
     - name: Remove the local image
-      run: docker rmi ${{ steps.movetolowercase.outputs.lowercase }}:${{ github.sha }}
+      run: docker rmi ${{ steps.movetolowercase.outputs.lowercase }}:latest
 
     - name: Deploy to Web Server
       uses: appleboy/ssh-action@master
@@ -52,10 +52,9 @@ jobs:
         key:       ${{ secrets.SSH_SERVER_KEY }}
         script: |
           echo $DOCKER_REGISTRY_PASS | docker login -u $DOCKER_REGISTRY_USER --password-stdin $DOCKER_REGISTRY_URL
-          docker pull $DOCKER_REGISTRY_URL/${{ steps.movetolowercase.outputs.lowercase }}:${{ github.sha }}
-          docker stop admlab
-          docker rm admlab
-          docker run -itd --name admlab --restart always -p $DOCKER_PORT:8080 --name=${{ github.event.repository.name }} $DOCKER_REGISTRY_URL/${{ steps.movetolowercase.outputs.lowercase }}:${{ github.sha }}
+          docker pull $DOCKER_REGISTRY_URL/${{ steps.movetolowercase.outputs.lowercase }}:latest
+          docker rm $(docker stop $(docker ps -a -q --filter ancestor=$DOCKER_REGISTRY_URL/${{ steps.movetolowercase.outputs.lowercase }}:latest --format="{{.ID}}"))
+          docker run -itd --restart always -p $DOCKER_PORT:8080 --name=${{ github.event.repository.name }} $DOCKER_REGISTRY_URL/${{ steps.movetolowercase.outputs.lowercase }}:latest
           docker logout $DOCKER_REGISTRY_URL
 
 
