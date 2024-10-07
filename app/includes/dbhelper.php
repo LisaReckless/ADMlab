@@ -3,7 +3,7 @@
 $db_host = "sql7.freemysqlhosting.net";
 $db_user = "sql7735983";
 $db_pass = "WYWXUjqF3p";
-$db_db = "site";
+$db_db = "sql7735983";
 
 function get_data_from_table($sel_from){
     global $db_host, $db_user, $db_pass, $db_db;
