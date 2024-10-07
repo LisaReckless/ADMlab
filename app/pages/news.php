@@ -1,5 +1,5 @@
 <div class="content">
-    <span class="content__name">Новости</span>
+    <span class="content__name">Главные Новости</span>
     <div class="page news">
         <?php
         foreach (get_data_from_table('news') as $row) {
