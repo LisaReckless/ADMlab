@@ -53,7 +53,8 @@ jobs:
         script: |
           echo $DOCKER_REGISTRY_PASS | docker login -u $DOCKER_REGISTRY_USER --password-stdin $DOCKER_REGISTRY_URL
           docker pull $DOCKER_REGISTRY_URL/${{ steps.movetolowercase.outputs.lowercase }}:latest
-          docker rm $(docker stop $(docker ps -a -q --filter ancestor=$DOCKER_REGISTRY_URL/${{ steps.movetolowercase.outputs.lowercase }}:latest --format="{{.ID}}"))
+          docker stop ${{ github.event.repository.name }}
+          docker rm ${{ github.event.repository.name }}
           docker run -itd --restart always -p $DOCKER_PORT:8080 --name=${{ github.event.repository.name }} $DOCKER_REGISTRY_URL/${{ steps.movetolowercase.outputs.lowercase }}:latest
           docker logout $DOCKER_REGISTRY_URL
 
